@@ -1,6 +1,16 @@
 extern crate clap;
+extern crate reqwest;
 
 use clap::{Arg, App, SubCommand};
+extern crate serde_json;
+
+#[macro_use]
+extern crate serde_derive;
+
+#[derive(Deserialize)]
+struct Ip {
+    origin: String,
+}
 
 fn main() {
     let argparse = App::new("GMAP")
@@ -22,20 +32,28 @@ fn main() {
                 .takes_value(true)
                 .help("place where you end (alias or \"ADDRESS\")")))
         .get_matches();
+        
     
     if let Some(argparse) = argparse.subcommand_matches("timeto") {
-        let travelMethod = argparse.value_of("travel-method").unwrap();
+        let travel_method = argparse.value_of("travel-method").unwrap();
         let origin = argparse.value_of("origin").unwrap();
         let destination = argparse.value_of("destination").unwrap();
-        println!("{}, {}, {}", travelMethod, origin, destination);
+        println!("{}, {}, {}", travel_method, origin, destination);
 
-        if travelMethod != "walk" && travelMethod != "drive" && travelMethod != "public" {
+        if travel_method != "walk" && travel_method != "drive" && travel_method != "public" {
             println!("Unrecognized travel method (try 'walk', 'drive', 'public')");
         }
 
         // DO HTTP Request
+        // Solve the key problem
+        
+
+        let res = reqwest::Client::new()
+                        .get("http://httpbin.org/ip").send();
+                        //.get("https://byu-courses.herokuapp.com/courses/codes").send();
+        let thing:Ip = res.unwrap().json().unwrap();
+        println!("{}", thing.origin);
     }
-    //println!("{}", action);
 }
 
 /*
