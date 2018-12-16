@@ -26,10 +26,31 @@ struct DirectionLeg {
 }
 
 #[derive(Deserialize)]
+struct GeocodingResult {
+    status: String,
+    result: Geocoded,
+}
+
+#[derive(Deserialize)]
+struct Geocoded {
+    #[serde(rename = "formatted_address")]
+    address: String,
+    geometry: GeocodedGeometry,
+}
+
+#[derive(Deserialize)]
+struct GeocodedGeometry {
+    location: LatLng,
+}
+
+#[derive(Deserialize)]
+struct LatLng { lat: u32, lng: u32 }
+
+#[derive(Deserialize)]
 struct TextValue { text: String, }
 
 #[derive(Deserialize)]
-struct ApiKeys { directions : String, }
+struct ApiKeys { google_maps : String, }
 
 
 /*
@@ -93,26 +114,31 @@ fn main() {
                 ::std::process::exit(1);
             }
         }
-        url_params = url_params + "key=" + &api_keys.directions;
+        url_params = url_params + "key=" + &api_keys.google_maps;
 
         println!("{}", url_params);
 
         let res = reqwest::Client::new().get(&url_params).send();
-        let thing:DirectionResult = res.unwrap().json().unwrap();
+        let dir:DirectionResult = res.unwrap().json().unwrap();
 
         // TODO check status
         println!("---- QUERY ----");
         println!("GET {}", url_params);
         println!("");
         println!("---- RESULTS ----");
-        println!("Status: {}", thing.status);
-        println!("Distance: {}", thing.routes[0].legs[0].distance.text);
-        println!("Time to Travel: {}", thing.routes[0].legs[0].duration.text);
+        println!("Status: {}", dir.status);
+        println!("Distance: {}", dir.routes[0].legs[0].distance.text);
+        println!("Time to Travel: {}", dir.routes[0].legs[0].duration.text);
         ::std::process::exit(1);
     }
     else if let Some(argparse) = argparse.subcommand_matches("coordinates") {
         let place = argparse.value_of("place").unwrap();
+        let key = &api_keys.google_maps;
+        let mut url_params = "https://maps.googleapis.com/maps/api/geocode/json?address=".to_owned();
+        url_params = url_params + place + "&key=" + key;
         println!("{}", place);
+
+        let res = reqwest::Client::new().get(&url_params).send();
 
         // url https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key=YOUR_API_KEY
         // response: see notes
